@@ -1,0 +1,6 @@
+flask
+flask-cors
+datetime
+birdnetlib
+librosa
+tensorflow
