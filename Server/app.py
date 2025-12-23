@@ -18,6 +18,7 @@ def hello_world():
 
 @app.route("/health")
 def health_check():
+    print(glob.glob("SoundFiles/*"))
     data = {
         "message": "Healthy",
         "status": "sucess"
