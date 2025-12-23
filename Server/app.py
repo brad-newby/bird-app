@@ -19,7 +19,7 @@ def hello_world():
 @app.route("/health")
 def health_check():
     print("This is a test for the console log")
-    temp = os.listdir("SoundFiles")
+    temp = os.listdir("/SoundFiles")
     data = {
         "message": temp,
         "status": "sucess"
