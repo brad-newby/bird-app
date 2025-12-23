@@ -10,8 +10,5 @@ COPY . /app
 # Install Flask and other dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Make port 8080 available for the app
-EXPOSE 8080
-
 # Run the command to start the Flask app
-CMD ["flask", "run", "--host=0.0.0.0"]
+CMD ["flask", "run", "--host=0.0.0.0", "--port=8080"]
