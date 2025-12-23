@@ -24,6 +24,7 @@ export class BirdServiceService {
     formData.append('day', day);
     formData.append('month', month);
     formData.append('year',year);
+    console.log(this.baseUrl + "analyze");
     return this._httpClient.post(this.baseUrl + "analyze", formData);
   }
 
