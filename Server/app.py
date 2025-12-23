@@ -19,7 +19,7 @@ def hello_world():
 @app.route("/health")
 def health_check():
     print("This is a test for the console log")
-    temp = os.listdir(pathToSounds)
+    temp = os.listdir("SoundFiles")
     data = {
         "message": temp,
         "status": "sucess"
@@ -30,21 +30,18 @@ def health_check():
 def analyze_bird():
     audioFile = request.files['file']
     audioFile.save("SoundFiles/sample.mp3")
-    fileList = glob.glob(pathToSounds)
     latitude = request.form.get('lat')
     longitude = request.form.get('long')
     day = request.form.get('day')
     month = request.form.get('month')
     year = request.form.get('year')
-    if not fileList:
+    if not audioFile:
         return "no sounds files found"
     else:
-        latestFile = max(fileList, key=os.path.getctime)
-        print(f"The most recent file is: {latestFile}")
         print("Analyzing Sounds...")
         recording = Recording(
             analyzer,
-            latestFile,
+            "SoundFiles/sample.mp3",
             lat=float(latitude),
             lon=float(longitude),
             date=datetime(year=int(year), month=int(month), day=int(day)), # use date or week_48
