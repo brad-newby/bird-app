@@ -1,7 +1,18 @@
-FROM node:lts-slim
+# Define node version
+FROM node:lts-slim as build
+# Define container directory
 WORKDIR /usr/src/app
-COPY . /usr/src/app/
+# Copy package*.json for npm install
+COPY package*.json ./
+# Run npm clean install, including dev dependencies for @angular-devkit
+RUN npm ci
+# Run npm install @angular/cli
 RUN npm install -g @angular/cli
-RUN npm install
-EXPOSE 8080
-CMD ["ng", "serve", "--host", "0.0.0.0", "--port", "8080"]
+# Copy all files
+COPY . .
+# Run ng build through npm to create dist folder
+RUN npm run build
+# Define nginx for front-end server
+FROM nginx:latest
+# Copy dist from ng build to nginx html folder
+COPY --from=build /usr/src/app/dist/bird-app/browser /usr/share/nginx/html
