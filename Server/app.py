@@ -18,9 +18,10 @@ def hello_world():
 
 @app.route("/health")
 def health_check():
-    print(glob.glob("SoundFiles/*"))
+    print("This is a test for the console log")
+    temp = os.listdir(pathToSounds)
     data = {
-        "message": "Healthy",
+        "message": temp,
         "status": "sucess"
     }
     return jsonify(data)
