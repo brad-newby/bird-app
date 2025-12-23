@@ -52,15 +52,15 @@ def analyze_bird():
         print(len(recording.detections))
         if (len(recording.detections) == 0):
             print("Rerunning analysis with no lat or long")
-            recording = Recording(
+            newRecording = Recording(
                 analyzer,
                 latestFile,
                 date=datetime(year=int(year), month=int(month), day=int(day)), # use date or week_48
                 min_conf=0.25,
             )
-            recording.analyze()
+            newRecording.analyze()
         print("Creating Output...")
-        return jsonify(recording.detections)
+        return jsonify(newRecording.detections)
 
     
 
