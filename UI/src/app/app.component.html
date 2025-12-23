@@ -1,0 +1,53 @@
+<mat-card *ngIf="!analyzing" class="example-card" appearance="outlined">
+  <mat-card-content>
+    <mat-card appearance="outlined" style="margin: 10px; align-items: center; justify-content: center; margin-top: 10px;">
+      <mat-card-content>
+        <div style="margin-bottom: 10px; align-items: center; justify-content: center;">
+          <button *ngIf="!tts" matButton (click)="ttsButton()" class="button-20">Text to Speach</button>
+          <button *ngIf="tts" matButton (click)="ttsButton()" class="button-21">Text to Speach</button>
+        </div>
+        <mat-form-field>
+          <mat-label>Choose a date</mat-label>
+          <input #ref matInput [matDatepicker]="picker" (dateChange)="onDateChange(ref.value)">
+          <mat-hint>MM/DD/YYYY</mat-hint>
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+    <div>
+      <mat-card appearance="outlined" style="margin: 10px;">
+        <mat-card-content>
+          <button *ngIf="!recording" matButton (click)="startRecording()" class="button-19">RECORD</button>
+          <button *ngIf="recording" matButton (click)="stopRecording()" class="button-18">STOP</button>
+        </mat-card-content>
+      </mat-card>
+    </div>
+    <div>
+      <mat-card appearance="outlined" style="margin: 10px;">
+        <mat-card-content>
+          <input type="file" class="file-upload" (change)="onUploadClick($event)">
+        </mat-card-content>
+      </mat-card>
+    </div>
+    <div *ngIf="birdPredictions.length > 0">
+      <mat-card (click)="onButtonClick(bird!)" *ngFor="let bird of birdPredictions" class="example-card" appearance="outlined" style="cursor: pointer; margin: 10px;">
+        <mat-card-header>
+          <!-- <div mat-card-avatar class="example-header-image"></div> -->
+          <mat-card-title>{{bird!.common_name}}</mat-card-title>
+          <mat-card-subtitle>{{bird!.scientific_name}}</mat-card-subtitle>
+        </mat-card-header>
+        <img mat-card-image src={{bird!.imageURL}} alt="Photo of a Shiba Inu">
+        <mat-card-content>
+          <p>
+            {{bird!.description}}
+          </p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-card-content>
+</mat-card>
+<div *ngIf="analyzing" style="justify-content: center; align-items: center;">
+  <mat-spinner/>
+</div>
+

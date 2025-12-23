@@ -27,7 +27,7 @@ def health_check():
 @app.route("/analyze",methods=['post'])
 def analyze_bird():
     audioFile = request.files['file']
-    audioFile.save("SoundFiles/sample.wav")
+    audioFile.save("SoundFiles/sample.mp3")
     fileList = glob.glob(pathToSounds)
     latitude = request.form.get('lat')
     longitude = request.form.get('long')
@@ -59,8 +59,12 @@ def analyze_bird():
                 min_conf=0.25,
             )
             newRecording.analyze()
-        print("Creating Output...")
-        return jsonify(newRecording.detections)
+            print("Creating Output...")
+            return jsonify(newRecording.detections)
+        else:
+            print("Creating Output...")
+            return jsonify(recording.detections)
+
 
     
 
