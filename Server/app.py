@@ -10,7 +10,6 @@ import glob
 app = Flask(__name__)
 CORS(app)
 analyzer = Analyzer()
-pathToSounds = "SoundFiles/*"
 
 @app.route("/")
 def hello_world():
@@ -29,7 +28,7 @@ def health_check():
 @app.route("/analyze",methods=['post'])
 def analyze_bird():
     audioFile = request.files['file']
-    audioFile.save("SoundFiles/sample.mp3")
+    audioFile.save("/SoundFiles/sample.mp3")
     latitude = request.form.get('lat')
     longitude = request.form.get('long')
     day = request.form.get('day')
@@ -41,7 +40,7 @@ def analyze_bird():
         print("Analyzing Sounds...")
         recording = Recording(
             analyzer,
-            "SoundFiles/sample.mp3",
+            "/SoundFiles/sample.mp3",
             lat=float(latitude),
             lon=float(longitude),
             date=datetime(year=int(year), month=int(month), day=int(day)), # use date or week_48
