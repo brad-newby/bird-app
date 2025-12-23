@@ -44,6 +44,10 @@ export class AppComponent implements OnInit {
       this.lat = resp.coords.latitude.toString();
       this.long = resp.coords.longitude.toString();
     })
+    console.log("Running health check...")
+    this._birdService.healthCheck().subscribe(result => {
+      console.log(result);
+    })
   }
 
   onUploadClick(event: any) {

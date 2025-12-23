@@ -16,6 +16,10 @@ export class BirdServiceService {
     return this._httpClient.get(this.baseUrl + "bird")
   }
 
+  healthCheck(): Observable<any> {
+    return this._httpClient.get(this.baseUrl + "health")
+  }
+
   analyzeBird(audioFile: Blob, lat: string, long: string, day: string, month: string, year: string): Observable<any> {
     const formData: FormData = new FormData();
     formData.append('file',audioFile,"sample.wav");
