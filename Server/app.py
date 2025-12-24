@@ -6,10 +6,13 @@ from birdnetlib.analyzer import Analyzer
 from datetime import datetime
 import os
 import glob
+import uuid
 
 app = Flask(__name__)
 CORS(app)
 analyzer = Analyzer()
+
+filePath = "/SoundFiles"
 
 @app.route("/")
 def hello_world():
@@ -18,7 +21,7 @@ def hello_world():
 @app.route("/health")
 def health_check():
     print("This is a test for the console log")
-    temp = os.listdir("/SoundFiles")
+    temp = os.listdir(filePath)
     data = {
         "message": temp,
         "status": "sucess"
@@ -28,7 +31,10 @@ def health_check():
 @app.route("/analyze",methods=['post'])
 def analyze_bird():
     audioFile = request.files['file']
-    audioFile.save("/SoundFiles/sample.mp3")
+    newId = uuid.uuid4()
+    audioFilePath = os.path.join(filePath,str(newId)) + ".mp3"
+    print(audioFilePath)
+    audioFile.save(audioFilePath)
     latitude = request.form.get('lat')
     longitude = request.form.get('long')
     day = request.form.get('day')
@@ -40,7 +46,7 @@ def analyze_bird():
         print("Analyzing Sounds...")
         recording = Recording(
             analyzer,
-            "/SoundFiles/sample.mp3",
+            audioFilePath,
             lat=float(latitude),
             lon=float(longitude),
             date=datetime(year=int(year), month=int(month), day=int(day)), # use date or week_48
@@ -52,7 +58,7 @@ def analyze_bird():
             print("Rerunning analysis with no lat or long")
             newRecording = Recording(
                 analyzer,
-                latestFile,
+                audioFilePath,
                 date=datetime(year=int(year), month=int(month), day=int(day)), # use date or week_48
                 min_conf=0.25,
             )
@@ -62,27 +68,3 @@ def analyze_bird():
         else:
             print("Creating Output...")
             return jsonify(recording.detections)
-
-
-    
-
-@app.route("/bird")
-def bird_test():
-    fileList = glob.glob(pathToSounds)
-    if not fileList:
-        return "no sounds files found"
-    else:
-        latestFile = max(fileList, key=os.path.getctime)
-        print(f"The most recent file is: {latestFile}")
-        print("Analyzing Sounds...")
-        recording = Recording(
-            analyzer,
-            latestFile,
-            lat=35.4244,
-            lon=-120.7463,
-            date=datetime(year=2022, month=5, day=10), # use date or week_48
-            min_conf=0.25,
-        )
-        recording.analyze()
-        print("Creating Output...")
-        return jsonify(recording.detections)
