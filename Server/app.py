@@ -19,6 +19,7 @@ def hello_world():
 
 @app.route("/health")
 def health_check():
+    print("Health check", flush=True)
     data = {
         "status": "sucess"
     }
@@ -26,7 +27,7 @@ def health_check():
 
 @app.route("/analyze",methods=['post'])
 def analyze_bird():
-    logging.info("Analyzing...")
+    print("Analyzing...", flush=True)
     audioFile = request.files['file']
     temp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
     with open(temp_file.name, 'wb') as f:
@@ -36,7 +37,7 @@ def analyze_bird():
     day = request.form.get('day')
     month = request.form.get('month')
     year = request.form.get('year')
-    logging.info("Analyzing Sounds...")
+    print("Analyzing Sounds...", flush=True)
     recording = Recording(
         analyzer,
         temp_file.name,
@@ -47,7 +48,7 @@ def analyze_bird():
     )
     recording.analyze()
     if (len(recording.detections) == 0):
-        logging.info("rerunning analysis with no lat/long")
+        print("rerunning analysis with no lat/long", flush=True)
         newRecording = Recording(
             analyzer,
             temp_file.name,
@@ -55,8 +56,8 @@ def analyze_bird():
             min_conf=0.25,
         )
         newRecording.analyze()
-        logging.info("Creating output...")
+        print("Creating output...", flush=True)
         return jsonify(newRecording.detections)
     else:
-        logging.info("Creating output...")
+        print("Creating output...", flush=True)
         return jsonify(recording.detections)
