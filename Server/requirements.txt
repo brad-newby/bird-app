@@ -1,6 +1,7 @@
 flask
 flask-cors
 datetime
-birdnetlib
 librosa
-tensorflow
+tflite
+ffmpeg
+birdnetlib
