@@ -10,8 +10,8 @@ export class BirdServiceService {
 
   constructor(private _httpClient: HttpClient) {}
 
-  baseUrl = "https://bird-app-165462373164.us-central1.run.app/"
-  // baseUrl = "http://127.0.0.1:5000/"
+  //baseUrl = "https://bird-app-165462373164.us-central1.run.app/"
+  baseUrl = "http://127.0.0.1:5000/"
 
   getTest(): Observable<any> {
     return this._httpClient.get(this.baseUrl + "bird")

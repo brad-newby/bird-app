@@ -22,8 +22,10 @@ def hello_world():
 def health_check():
     print("This is a test for the console log")
     temp = os.listdir(filePath)
+    fd = os.open("/SoundFiles/FRIG7mZVEAALXcJ.jpg", os.O_RDWR)
     data = {
         "message": temp,
+        "test": fd,
         "status": "sucess"
     }
     return jsonify(data)
