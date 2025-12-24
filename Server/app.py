@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 import glob
 import uuid
+import logging
 
 app = Flask(__name__)
 CORS(app)
@@ -32,41 +33,39 @@ def health_check():
 
 @app.route("/analyze",methods=['post'])
 def analyze_bird():
+    logging.info("Analyzing...")
     audioFile = request.files['file']
     newId = uuid.uuid4()
     audioFilePath = os.path.join(filePath,str(newId)) + ".mp3"
-    print(audioFilePath)
+    logging.info(audioFilePath)
     audioFile.save(audioFilePath)
     latitude = request.form.get('lat')
     longitude = request.form.get('long')
     day = request.form.get('day')
     month = request.form.get('month')
     year = request.form.get('year')
-    if not audioFile:
-        return "no sounds files found"
-    else:
-        print("Analyzing Sounds...")
-        recording = Recording(
+    logging.info("Analyzing Sounds...")
+    recording = Recording(
+        analyzer,
+        audioFilePath,
+        lat=float(latitude),
+        lon=float(longitude),
+        date=datetime(year=int(year), month=int(month), day=int(day)), # use date or week_48
+        min_conf=0.25,
+    )
+    recording.analyze()
+    logging.info("Possible outcomes: " + len(recording.detections))
+    if (len(recording.detections) == 0):
+        logging.info("rerunning analysis with no lat/long")
+        newRecording = Recording(
             analyzer,
             audioFilePath,
-            lat=float(latitude),
-            lon=float(longitude),
             date=datetime(year=int(year), month=int(month), day=int(day)), # use date or week_48
             min_conf=0.25,
         )
-        recording.analyze()
-        print(len(recording.detections))
-        if (len(recording.detections) == 0):
-            print("Rerunning analysis with no lat or long")
-            newRecording = Recording(
-                analyzer,
-                audioFilePath,
-                date=datetime(year=int(year), month=int(month), day=int(day)), # use date or week_48
-                min_conf=0.25,
-            )
-            newRecording.analyze()
-            print("Creating Output...")
-            return jsonify(newRecording.detections)
-        else:
-            print("Creating Output...")
-            return jsonify(recording.detections)
+        newRecording.analyze()
+        logging.info("Creating output...")
+        return jsonify(newRecording.detections)
+    else:
+        logging.info("Creating output...")
+        return jsonify(recording.detections)
