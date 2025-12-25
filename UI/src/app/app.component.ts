@@ -98,8 +98,8 @@ export class AppComponent implements OnInit {
           console.log(result);
           const entry = result['entities'][0]
           bird!.imageURL = entry['images'][0];
-          const description = "The " + entry['name'] + ", is of the order: " + entry['order'] + ", scientific name: " + entry['sciName'] + ", has a wing span of " + entry['wingspanMin'] + " to " + 
-          entry['wingspanMax'] + ", and a status of: " + entry['status'];
+          const description = "The " + entry['name'] + ", is of the order: " + entry['order'] + ", scientific name: " + entry['sciName'] + ", has a wing span of " + entry['wingspanMin'] + " centimeters to " + 
+          entry['wingspanMax'] + " centimeters, and a status of: " + entry['status'];
           bird!.description = description
         }, error: (err) => {
           console.log(err);
