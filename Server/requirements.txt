@@ -6,3 +6,5 @@ tensorflow
 tflite
 ffmpeg
 birdnetlib
+samplerate
+resampy
