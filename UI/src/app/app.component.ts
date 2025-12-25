@@ -28,7 +28,7 @@ export class AppComponent implements OnInit {
   birdPredictions: (BirdPrediction|undefined)[] = [];
   recording = false;
   record: RecordRTC.StereoAudioRecorder | undefined;
-  audioURL: string | undefined;
+  audioURL: string = "";
   tts = false;
   lat: string = "0";
   long: string = "0";  
@@ -52,10 +52,9 @@ export class AppComponent implements OnInit {
 
   onUploadClick(event: any) {
     console.log("uploading...")
-    console.log(event);
     const file: File = event.target.files[0];
-    console.log(file);
     this.getBirds(file);
+    this.audioURL = URL.createObjectURL(file);
   }
 
   onDateChange(newDate: string){
@@ -188,6 +187,7 @@ export class AppComponent implements OnInit {
     }
     this.getBirds(blob);
     this.record?.clearRecordedData();
+    this.audioURL = URL.createObjectURL(blob);
   }
 
   errorCallback(error: any) {
