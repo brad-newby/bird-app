@@ -91,9 +91,7 @@ export class AppComponent implements OnInit {
       utterance.lang = 'en-US'
       utterance.pitch = 1;
       utterance.rate = 1;
-      if (this.tts) {
-        window.speechSynthesis.speak(utterance);
-      }
+      window.speechSynthesis.speak(utterance);
       this.birdPredictions.sort((n1,n2) => n2!.confidence - n1!.confidence)
       this.birdPredictions.forEach(bird => {
         this._birdService.getBirdTest(bird!.scientific_name).subscribe({next: (result) => {
