@@ -8,10 +8,73 @@ import os
 import glob
 import logging
 import tempfile
+import psycopg2
 
 app = Flask(__name__)
 CORS(app)
 analyzer = Analyzer()
+connection = None
+db_address = "10.25.16.3"
+# db_address = "34.28.125.208"
+try:
+    params = {
+        "host": db_address,
+        "database": "birdDB",
+        "user": "postgres",
+        "password": "postgres",
+        "port": 5432
+    }
+    print("Connecting to DB...", flush=True)
+    conn = psycopg2.connect(**params)
+    print("Connected to DB!", flush=True)
+except (psycopg2.DatabaseError, Exception) as error:
+    print(f"An error occurred: {error}", flush=True)
+
+def connect_test():
+    try:
+        cur = conn.cursor()
+        cur.execute('SELECT version()')
+        db_version = cur.fetchone()
+        cur.close()
+        return db_version
+    except (psycopg2.DatabaseError, Exception) as error:
+        print(f"An error occurred: {error}", flush=True)
+
+def convert_to_binary_data(filename):
+    with open(filename, 'rb') as file:
+        blob_data = file.read()
+    return blob_data
+
+@app.route("/save",methods=['post'])
+def save_prediction():
+    try:
+        predictions = request.form.get('predictionData')
+        audioFile = request.files['file']
+        temp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+        with open(temp_file.name, 'wb') as f:
+            audioFile.save(f)
+        audio_blob = convert_to_binary_data(temp_file.name)
+        psy_binary_data = psycopg2.Binary(audio_blob)
+        cur = conn.cursor()
+        strPredictions = str(predictions)
+        sql = """
+        INSERT INTO analysis ("audioData","predictionData") VALUES (%s,%s)
+        """
+        cur.execute(sql,(psy_binary_data,strPredictions))
+        conn.commit()
+        data = {
+            "data" : predictions,
+            "status": "sucess"
+        }
+        cur.close()
+        return jsonify(data)
+    except (psycopg2.DatabaseError, Exception) as error:
+        print(f"An error occurred: {error}", flush=True)
+        data = {
+            "data" : None,
+            "staus": "failed"
+        }
+        return jsonify(data)
 
 @app.route("/")
 def hello_world():
@@ -19,8 +82,10 @@ def hello_world():
 
 @app.route("/health")
 def health_check():
+    db_check = connect_test()
     print("Health check", flush=True)
     data = {
+        "db_status" : db_check,
         "status": "sucess"
     }
     return jsonify(data)
@@ -61,3 +126,52 @@ def analyze_bird():
     else:
         print("Creating output...", flush=True)
         return jsonify(recording.detections)
+
+@app.route("/analysis-list",methods=['get'])
+def get_all_anaylsis():
+    try:
+        cur = conn.cursor()
+        sql = """
+        SELECT * FROM analysis 
+        """
+        cur.execute(sql)
+        rows = cur.fetchall()
+        data = []
+        for row in rows:
+            entry = {
+                "id" : row[0],
+                "createdDate": row[1],
+                "predictionData": row[2],
+            }
+            data.append(entry)
+        cur.close()
+        return data
+    except (psycopg2.DatabaseError, Exception) as error:
+        print(f"An error occurred: {error}", flush=True)
+        data = {
+            "data" : None,
+            "staus": "failed"
+        }
+        return jsonify(data)
+    
+@app.route("/prediction", methods=['get'])
+def get_prediction():
+    try:
+        id = request.args.get('id','')
+        cur = conn.cursor()
+        sql = """
+        SELECT "audioData" FROM analysis WHERE id = %s
+        """
+        cur.execute(sql,(id,))
+        audioFile = cur.fetchone()
+        mview = audioFile[0]
+        binary_data = bytes(mview)
+        cur.close()
+        return binary_data
+    except (psycopg2.DatabaseError, Exception) as error:
+        print(f"An error occurred: {error}", flush=True)
+        data = {
+            "data" : None,
+            "staus": "failed"
+        }
+        return jsonify(data)

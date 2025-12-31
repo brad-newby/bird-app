@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { BirdPrediction } from '../Models/bird-prediction';
 
@@ -10,8 +10,8 @@ export class BirdServiceService {
 
   constructor(private _httpClient: HttpClient) {}
 
-  baseUrl = "https://bird-app-api-vzcffxirda-uc.a.run.app/"
-  //baseUrl = "http://127.0.0.1:8080/"
+  //baseUrl = "https://bird-app-api-vzcffxirda-uc.a.run.app/"
+  baseUrl = "http://127.0.0.1:5000/"
 
   getTest(): Observable<any> {
     return this._httpClient.get(this.baseUrl + "bird")
@@ -44,5 +44,22 @@ export class BirdServiceService {
       'hasImg': true
     }
     return this._httpClient.get("https://nuthatch.lastelm.software/v2/birds", { headers: headers, params: params })
+  }
+
+  savePrediction(newPredictions: BirdPrediction[], audioFile: Blob): Observable<any> {
+    const formData: FormData = new FormData();
+    formData.append('file',audioFile,"sample.wav");
+    formData.append('predictionData', JSON.stringify(newPredictions));
+
+    return this._httpClient.post(this.baseUrl + "save", formData);
+  }
+
+  getPredictions(): Observable<any> {
+    return this._httpClient.get(this.baseUrl + "analysis-list");
+  }
+
+  getPredictionAudio(id: string): Observable<Blob> {
+    let params = new HttpParams().set('id', id)
+    return this._httpClient.get(this.baseUrl + "prediction", {params: params, responseType: 'blob'})
   }
 }

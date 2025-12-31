@@ -7,3 +7,4 @@ tflite
 ffmpeg
 birdnetlib
 resampy
+psycopg2-binary
