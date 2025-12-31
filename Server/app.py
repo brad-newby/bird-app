@@ -14,11 +14,9 @@ app = Flask(__name__)
 CORS(app)
 analyzer = Analyzer()
 connection = None
-db_address = "10.25.16.3"
-# db_address = "34.28.125.208"
 try:
     params = {
-        "host": db_address,
+        "host": "34.28.125.208",
         "database": "birdDB",
         "user": "postgres",
         "password": "postgres",
