@@ -76,6 +76,17 @@ def save_prediction():
         }
         return jsonify(data)
 
+@app.route("/test")
+def testing():
+    try:
+        print("Connecting to DB...", flush=True)
+        conn = psycopg2.connect(**params)
+        print("Connected to DB!", flush=True)
+        return "success"
+    except (psycopg2.DatabaseError, Exception) as error:
+        print(f"An error occurred: {error}", flush=True)
+        return "failure"
+
 @app.route("/")
 def hello_world():
     return "<p>Hello, World!</p>"
