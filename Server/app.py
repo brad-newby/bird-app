@@ -13,27 +13,29 @@ import psycopg2
 app = Flask(__name__)
 CORS(app)
 analyzer = Analyzer()
-connection = None
-try:
-    params = {
-        "host": "34.28.125.208",
-        "database": "birdDB",
-        "user": "postgres",
-        "password": "postgres",
-        "port": 5432
-    }
-    print("Connecting to DB...", flush=True)
-    conn = psycopg2.connect(**params)
-    print("Connected to DB!", flush=True)
-except (psycopg2.DatabaseError, Exception) as error:
-    print(f"An error occurred: {error}", flush=True)
+conn = None
+params = {
+    "host": "34.28.125.208",
+    "database": "birdDB",
+    "user": "postgres",
+    "password": "postgres",
+    "port": 5432
+}
+# try:
+#     print("Connecting to DB...", flush=True)
+#     conn = psycopg2.connect(**params)
+#     print("Connected to DB!", flush=True)
+# except (psycopg2.DatabaseError, Exception) as error:
+#     print(f"An error occurred: {error}", flush=True)
 
 def connect_test():
     try:
+        conn = psycopg2.connect(**params)
         cur = conn.cursor()
         cur.execute('SELECT version()')
         db_version = cur.fetchone()
         cur.close()
+        conn.close()
         return db_version
     except (psycopg2.DatabaseError, Exception) as error:
         print(f"An error occurred: {error}", flush=True)
