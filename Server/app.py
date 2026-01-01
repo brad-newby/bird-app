@@ -9,34 +9,41 @@ import glob
 import logging
 import tempfile
 import psycopg2
+from flask_sqlalchemy import SQLAlchemy
+from google.cloud.sql.connector import Connector, IPTypes
+import pg8000
 
 app = Flask(__name__)
 CORS(app)
 analyzer = Analyzer()
-conn = None
-params = {
-    "host": "34.28.125.208",
-    "database": "birdDB",
-    "user": "postgres",
-    "password": "postgres",
-    "port": 5432
-}
-# try:
-#     print("Connecting to DB...", flush=True)
-#     conn = psycopg2.connect(**params)
-#     print("Connected to DB!", flush=True)
-# except (psycopg2.DatabaseError, Exception) as error:
-#     print(f"An error occurred: {error}", flush=True)
+DB_USER = "postgres"
+DB_PASS = "postgres"
+DB_NAME = "birdDB"
+INSTANCE_CONNECTION_NAME = "project-33453784-cd90-4e6a-8ac:us-central1:bird-app"
+connector = Connector()
+
+def connect_with_connector():
+    conn = connector.connect(
+        INSTANCE_CONNECTION_NAME,
+        "pg8000",
+        user=DB_USER,
+        password=DB_PASS,
+        dbName=DB_NAME,
+        ip_type=IPTypes.PUBLIC
+    )
+    return conn
+
+pool = sqlalchemy.create_engine(
+    "postgresql+pg8000://",
+    creator=getconn,
+)
 
 def connect_test():
     try:
-        conn = psycopg2.connect(**params)
-        cur = conn.cursor()
-        cur.execute('SELECT version()')
-        db_version = cur.fetchone()
-        cur.close()
-        conn.close()
-        return db_version
+        with pool.connect() as db_conn:
+            results = db_conn.execute(sqlalchemy.text("SELECT version()"))
+            db_version = results.fetchone()
+            return db_version
     except (psycopg2.DatabaseError, Exception) as error:
         print(f"An error occurred: {error}", flush=True)
 
@@ -75,17 +82,6 @@ def save_prediction():
             "staus": "failed"
         }
         return jsonify(data)
-
-@app.route("/test")
-def testing():
-    try:
-        print("Connecting to DB...", flush=True)
-        conn = psycopg2.connect(**params)
-        print("Connected to DB!", flush=True)
-        return "success"
-    except (psycopg2.DatabaseError, Exception) as error:
-        print(f"An error occurred: {error}", flush=True)
-        return "failure"
 
 @app.route("/")
 def hello_world():

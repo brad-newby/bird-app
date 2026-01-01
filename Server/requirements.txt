@@ -8,3 +8,6 @@ ffmpeg
 birdnetlib
 resampy
 psycopg2-binary
+flask-sqlalchemy
+pg8000
+cloud-sql-python-connector
