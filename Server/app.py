@@ -15,7 +15,7 @@ CORS(app)
 analyzer = Analyzer()
 conn = None
 params = {
-    "host": "10.25.16.3",
+    "host": "34.28.125.208",
     "database": "birdDB",
     "user": "postgres",
     "password": "postgres",
