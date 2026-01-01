@@ -8,34 +8,36 @@ import os
 import glob
 import logging
 import tempfile
-import psycopg2
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text
+import sqlalchemy
 
 app = Flask(__name__)
 CORS(app)
 analyzer = Analyzer()
-DB_USER = "postgres"
-DB_PASS = "postgres"
-DB_NAME = "birdDB"
-DB_HOST = "34.28.125.208"
-DB_PORT = "5432"
-INSTANCE_CONNECTION_NAME = "project-33453784-cd90-4e6a-8ac:us-central1:bird-app"
 
-app.config["SQLALCHEMY_DATABASE_URI"]= f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]= True
+def connect_unix_socket() -> sqlalchemy.engine.base.Engine:
+    db_user = "postgres"
+    db_pass = "postgres"
+    db_name = "birdDB"
+    unix_socket_path = "/cloudsql/project-33453784-cd90-4e6a-8ac:us-central1:bird-app"
 
-db = SQLAlchemy(app)
+    pool = sqlalchemy.create_engine(
+        sqlalchemy.engine.url.URL.create(
+            drivername="postgresql+pg8000",
+            username=db_user,
+            password=db_pass,
+            database=db_name,
+            query={"unix_sock": unix_socket_path},
+        ),
+    )
+    return pool
 
+db = None
 
-def connect_test():
-    try:
-        query = text("SELECT version()")
-        results = db.session.execute(query)
-        db_version = results.fetchone()
-        return db_version
-    except (psycopg2.DatabaseError, Exception) as error:
-        print(f"An error occurred: {error}", flush=True)
+@app.before_request
+def init_db() -> sqlalchemy.engine.base.Engine:
+    global db
+    if db is None:
+        db = connect_unix_socket()
 
 def convert_to_binary_data(filename):
     with open(filename, 'rb') as file:
@@ -79,12 +81,18 @@ def hello_world():
 
 @app.route("/health")
 def health_check():
-    db_check = connect_test()
-    for row in db_check:
-        print(row)
+    query = sqlalchemy.text(
+        "SELECT version()"
+    )
+    try:
+        with db.connect() as conn:
+            results = conn.execute(query)
+            print(results)
+    except Exception as e:
+        print(e)
     print("Health check", flush=True)
     data = {
-        "db_status" : db_check[0],
+        "db_status" : "test",
         "status": "sucess"
     }
     return jsonify(data)
