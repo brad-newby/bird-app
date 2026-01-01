@@ -10,8 +10,7 @@ import logging
 import tempfile
 import psycopg2
 from flask_sqlalchemy import SQLAlchemy
-from google.cloud.sql.connector import Connector, IPTypes
-import pg8000
+from sqlalchemy import text
 
 app = Flask(__name__)
 CORS(app)
@@ -19,31 +18,22 @@ analyzer = Analyzer()
 DB_USER = "postgres"
 DB_PASS = "postgres"
 DB_NAME = "birdDB"
+DB_HOST = "34.28.125.208"
+DB_PORT = "5432"
 INSTANCE_CONNECTION_NAME = "project-33453784-cd90-4e6a-8ac:us-central1:bird-app"
-connector = Connector()
 
-def connect_with_connector():
-    conn = connector.connect(
-        INSTANCE_CONNECTION_NAME,
-        "pg8000",
-        user=DB_USER,
-        password=DB_PASS,
-        dbName=DB_NAME,
-        ip_type=IPTypes.PUBLIC
-    )
-    return conn
+app.config["SQLALCHEMY_DATABASE_URI"]= f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]= True
 
-pool = sqlalchemy.create_engine(
-    "postgresql+pg8000://",
-    creator=getconn,
-)
+db = SQLAlchemy(app)
+
 
 def connect_test():
     try:
-        with pool.connect() as db_conn:
-            results = db_conn.execute(sqlalchemy.text("SELECT version()"))
-            db_version = results.fetchone()
-            return db_version
+        query = text("SELECT version()")
+        results = db.session.execute(query)
+        db_version = results.fetchone()
+        return db_version
     except (psycopg2.DatabaseError, Exception) as error:
         print(f"An error occurred: {error}", flush=True)
 
@@ -90,9 +80,11 @@ def hello_world():
 @app.route("/health")
 def health_check():
     db_check = connect_test()
+    for row in db_check:
+        print(row)
     print("Health check", flush=True)
     data = {
-        "db_status" : db_check,
+        "db_status" : db_check[0],
         "status": "sucess"
     }
     return jsonify(data)
