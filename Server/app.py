@@ -9,6 +9,7 @@ import glob
 import logging
 import tempfile
 import sqlalchemy
+import pg8000
 
 app = Flask(__name__)
 CORS(app)
@@ -30,6 +31,33 @@ def connect_unix_socket() -> sqlalchemy.engine.base.Engine:
         ),
     )
     return pool
+
+
+def connect_tcp_socket() -> sqlalchemy.engine.base.Engine:
+    db_host = "34.28.125.208"
+    db_user = "postgres"
+    db_pass = "postgres"
+    db_name = "birdDB"
+    db_port = "5432"
+
+    connect_args = {}
+
+    pool = sqlalchemy.create_engine(
+        sqlalchemy.engine.url.URL.create(
+            drivername="postgresql+pg8000",
+            username=db_user,
+            password=db_pass,
+            host=db_host,
+            port=db_port,
+            database=db_name,
+        ),
+        pool_size=5,
+        max_overflow=2,
+        pool_timeout=30,
+        pool_recycle=1800,
+    )
+    return pool
+
 
 db = None
 
