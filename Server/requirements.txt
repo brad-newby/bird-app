@@ -8,4 +8,5 @@ ffmpeg
 birdnetlib
 resampy
 psycopg2-binary
+pg8000
 sqlalchemy

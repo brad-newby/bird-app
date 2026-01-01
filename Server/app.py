@@ -16,7 +16,7 @@ analyzer = Analyzer()
 
 def connect_unix_socket() -> sqlalchemy.engine.base.Engine:
     db_user = "postgres"
-    db_pass = "postgres"
+    db_pass = "pcFI@SCMR?1|a./r"
     db_name = "birdDB"
     unix_socket_path = "/cloudsql/project-33453784-cd90-4e6a-8ac:us-central1:bird-app"
 
@@ -27,11 +27,11 @@ def connect_unix_socket() -> sqlalchemy.engine.base.Engine:
         # Note: Some drivers require the `unix_sock` query parameter to use a different key.
         # For example, 'psycopg2' uses the path set to `host` in order to connect successfully.
         sqlalchemy.engine.url.URL.create(
-            drivername="postgresql+psycopg2",
+            drivername="postgresql+pg8000",
             username=db_user,
             password=db_pass,
             database=db_name,
-            query={"host": f"{unix_socket_path}/.s.PGSQL.5432"},
+            query={"unix_sock": f"{unix_socket_path}/.s.PGSQL.5432"},
         ),
         # ...
     )
@@ -41,15 +41,22 @@ def connect_unix_socket() -> sqlalchemy.engine.base.Engine:
 def connect_tcp_socket() -> sqlalchemy.engine.base.Engine:
     db_host = "34.28.125.208"
     db_user = "postgres"
-    db_pass = "postgres"
+    db_pass = "pcFI@SCMR?1|a./r"
     db_name = "birdDB"
     db_port = "5432"
 
     connect_args = {}
 
-    pool = sqlalchemy.create_engine(f'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}')
+    pool = sqlalchemy.create_engine(
+        sqlalchemy.engine.url.URL.create(
+            drivername="postgresql+psycopg2",
+            username=db_user,
+            password=db_pass,
+            database=db_name,
+            query={"host": f"{db_host}"},
+        ),
+    )
     return pool
-
 
 db = None
 
@@ -58,6 +65,7 @@ def init_db() -> sqlalchemy.engine.base.Engine:
     global db
     if db is None:
         db = connect_unix_socket()
+        #db = connect_tcp_socket()
 
 def convert_to_binary_data(filename):
     with open(filename, 'rb') as file:
@@ -99,20 +107,26 @@ def save_prediction():
 def hello_world():
     return "<p>Hello, World!</p>"
 
-@app.route("/health")
-def health_check():
+def check_db_version():
     query = sqlalchemy.text(
         "SELECT version()"
     )
     try:
         with db.connect() as conn:
             results = conn.execute(query)
-            print(results)
+            output = results.fetchone()
+            return output
     except Exception as e:
         print(e)
+        return None
+
+
+@app.route("/health")
+def health_check():
     print("Health check", flush=True)
+    output = check_db_version()
     data = {
-        "db_status" : "test",
+        "db_status" : output[0],
         "status": "sucess"
     }
     return jsonify(data)
