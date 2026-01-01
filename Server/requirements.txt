@@ -7,5 +7,5 @@ tflite
 ffmpeg
 birdnetlib
 resampy
-pg8000
+psycopg2
 sqlalchemy

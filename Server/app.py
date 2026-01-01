@@ -9,7 +9,6 @@ import glob
 import logging
 import tempfile
 import sqlalchemy
-import pg8000
 
 app = Flask(__name__)
 CORS(app)
@@ -22,13 +21,19 @@ def connect_unix_socket() -> sqlalchemy.engine.base.Engine:
     unix_socket_path = "/cloudsql/project-33453784-cd90-4e6a-8ac:us-central1:bird-app"
 
     pool = sqlalchemy.create_engine(
+        # Equivalent URL:
+        # postgresql+pg8000://<db_user>:<db_pass>@/<db_name>
+        #                         ?unix_sock=<INSTANCE_UNIX_SOCKET>/.s.PGSQL.5432
+        # Note: Some drivers require the `unix_sock` query parameter to use a different key.
+        # For example, 'psycopg2' uses the path set to `host` in order to connect successfully.
         sqlalchemy.engine.url.URL.create(
-            drivername="postgresql+pg8000",
+            drivername="postgresql+psycopg2",
             username=db_user,
             password=db_pass,
             database=db_name,
-            query={"unix_sock": unix_socket_path},
+            query={"host": f"{unix_socket_path}/.s.PGSQL.5432"},
         ),
+        # ...
     )
     return pool
 
@@ -42,20 +47,7 @@ def connect_tcp_socket() -> sqlalchemy.engine.base.Engine:
 
     connect_args = {}
 
-    pool = sqlalchemy.create_engine(
-        sqlalchemy.engine.url.URL.create(
-            drivername="postgresql+pg8000",
-            username=db_user,
-            password=db_pass,
-            host=db_host,
-            port=db_port,
-            database=db_name,
-        ),
-        pool_size=5,
-        max_overflow=2,
-        pool_timeout=30,
-        pool_recycle=1800,
-    )
+    pool = sqlalchemy.create_engine(f'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}')
     return pool
 
 
