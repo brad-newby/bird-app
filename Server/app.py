@@ -9,6 +9,7 @@ import glob
 import logging
 import tempfile
 import sqlalchemy
+import psycopg2
 
 app = Flask(__name__)
 CORS(app)
@@ -67,46 +68,6 @@ def init_db() -> sqlalchemy.engine.base.Engine:
         db = connect_unix_socket()
         #db = connect_tcp_socket()
 
-def convert_to_binary_data(filename):
-    with open(filename, 'rb') as file:
-        blob_data = file.read()
-    return blob_data
-
-@app.route("/save",methods=['post'])
-def save_prediction():
-    try:
-        predictions = request.form.get('predictionData')
-        audioFile = request.files['file']
-        temp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
-        with open(temp_file.name, 'wb') as f:
-            audioFile.save(f)
-        audio_blob = convert_to_binary_data(temp_file.name)
-        psy_binary_data = psycopg2.Binary(audio_blob)
-        cur = conn.cursor()
-        strPredictions = str(predictions)
-        sql = """
-        INSERT INTO analysis ("audioData","predictionData") VALUES (%s,%s)
-        """
-        cur.execute(sql,(psy_binary_data,strPredictions))
-        conn.commit()
-        data = {
-            "data" : predictions,
-            "status": "sucess"
-        }
-        cur.close()
-        return jsonify(data)
-    except (psycopg2.DatabaseError, Exception) as error:
-        print(f"An error occurred: {error}", flush=True)
-        data = {
-            "data" : None,
-            "staus": "failed"
-        }
-        return jsonify(data)
-
-@app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
-
 def check_db_version():
     query = sqlalchemy.text(
         "SELECT version()"
@@ -120,6 +81,43 @@ def check_db_version():
         print(e)
         return None
 
+def convert_to_binary_data(filename):
+    with open(filename, 'rb') as file:
+        blob_data = file.read()
+    return blob_data
+
+@app.route("/save",methods=['post'])
+def save_prediction():
+    predictions = request.form.get('predictionData')
+    audioFile = request.files['file']
+    temp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+    with open(temp_file.name, 'wb') as f:
+        audioFile.save(f)
+    audio_blob = convert_to_binary_data(temp_file.name)
+    psy_binary_data = psycopg2.Binary(audio_blob)
+    strPredictions = str(predictions)
+    sql = sqlalchemy.text(""" INSERT INTO analysis ("audioData","predictionData") VALUES (:audiodata,:predictionData) """)
+    try:
+        with db.connect() as conn:
+            params = {"audiodata": psy_binary_data,"predictionData": strPredictions}
+            conn.execute(sql, params)
+            conn.commit()
+            data = {
+                "data" : predictions,
+                "status": "sucess"
+            }
+            return jsonify(data)
+    except Exception as error:
+        print(f"An error occurred: {error}", flush=True)
+        data = {
+            "error" : str(error),
+            "staus": "failed"
+        }
+        return jsonify(data)
+
+@app.route("/")
+def hello_world():
+    return "<p>Hello, World!</p>"
 
 @app.route("/health")
 def health_check():
@@ -170,49 +168,46 @@ def analyze_bird():
 
 @app.route("/analysis-list",methods=['get'])
 def get_all_anaylsis():
+    query = sqlalchemy.text(
+        """SELECT * FROM analysis ORDER BY "createdDate" DESC"""
+    )
     try:
-        cur = conn.cursor()
-        sql = """
-        SELECT * FROM analysis 
-        """
-        cur.execute(sql)
-        rows = cur.fetchall()
-        data = []
-        for row in rows:
-            entry = {
-                "id" : row[0],
-                "createdDate": row[1],
-                "predictionData": row[2],
-            }
-            data.append(entry)
-        cur.close()
-        return data
-    except (psycopg2.DatabaseError, Exception) as error:
+        with db.connect() as conn:
+            results = conn.execute(query)
+            output = results.fetchall()
+            data = []
+            for row in output:
+                entry = {
+                    "id" : row[0],
+                    "createdDate": row[1],
+                    "predictionData": row[2],
+                }
+                data.append(entry)
+            return data
+    except Exception as error:
         print(f"An error occurred: {error}", flush=True)
         data = {
-            "data" : None,
+            "error" : str(error),
             "staus": "failed"
         }
         return jsonify(data)
     
 @app.route("/prediction", methods=['get'])
 def get_prediction():
+    id = request.args.get('id','')
+    sql = sqlalchemy.text(""" SELECT "audioData" FROM analysis WHERE id = :id """)
     try:
-        id = request.args.get('id','')
-        cur = conn.cursor()
-        sql = """
-        SELECT "audioData" FROM analysis WHERE id = %s
-        """
-        cur.execute(sql,(id,))
-        audioFile = cur.fetchone()
-        mview = audioFile[0]
-        binary_data = bytes(mview)
-        cur.close()
-        return binary_data
-    except (psycopg2.DatabaseError, Exception) as error:
+        with db.connect() as conn:
+            params = {"id" : id}
+            results = conn.execute(sql, params)
+            audioFile = results.fetchone()
+            mview = audioFile[0]
+            binary_data = bytes(mview)
+            return binary_data
+    except Exception as error:
         print(f"An error occurred: {error}", flush=True)
         data = {
-            "data" : None,
+            "error" : str(error),
             "staus": "failed"
         }
         return jsonify(data)

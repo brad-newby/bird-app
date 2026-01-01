@@ -51,10 +51,17 @@ export class RecordComponent implements OnInit {
   getBirds(blob: Blob) {
     this.analyzing = true;
     if (this.day === "" || this.month === "" || this.year === "") {
+      console.log("This is happening?")
       let tempDate = new Date()
       this.day = tempDate.getDay().toString();
       this.month = tempDate.getMonth().toString();
       this.year = tempDate.getFullYear().toString();
+
+      if (this.month === "0") {
+        this.month = "1"
+      }
+
+      console.log(this.month)
     }
     this._birdService.analyzeBird(blob, this.lat, this.long, this.day, this.month, this.year).subscribe({next: (result) => {
       console.log(result);
