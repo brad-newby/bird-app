@@ -88,15 +88,11 @@ def init_db() -> sqlalchemy.engine.base.Engine:
 @app.route("/save",methods=['post'])
 def save_prediction():
     predictions = request.form.get('predictionData')
-    audioFile = request.files['file']
-    temp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
-    with open(temp_file.name, 'wb') as f:
-        audioFile.save(f)
-        f.close()
-    audio_blob = convert_to_binary_data(temp_file.name)
-    temp_file.close()
-    os.remove(temp_file.name)
-    psy_binary_data = psycopg2.Binary(audio_blob)
+    fileToSave = request.files['file']
+    # with tempfile.NamedTemporaryFile(mode='wb', suffix='.wav', delete=True) as temp_file:
+    #     temp_file.write(fileToSave)
+    # audio_blob = open(temp_file.name, 'rb').read()
+    psy_binary_data = psycopg2.Binary(fileToSave.read())
     strPredictions = str(predictions)
     sql = sqlalchemy.text(""" INSERT INTO analysis ("audioData","predictionData") VALUES (:audiodata,:predictionData) RETURNING id """)
     try:
