@@ -81,8 +81,8 @@ def convert_to_binary_data(filename):
 def init_db() -> sqlalchemy.engine.base.Engine:
     global db
     if db is None:
-        #db = connect_unix_socket()
-        db = connect_tcp_socket()
+        db = connect_unix_socket()
+        #db = connect_tcp_socket()
 
 @app.route("/save",methods=['post'])
 def save_prediction():
