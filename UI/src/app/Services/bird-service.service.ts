@@ -46,10 +46,10 @@ export class BirdServiceService {
     return this._httpClient.get("https://nuthatch.lastelm.software/v2/birds", { headers: headers, params: params })
   }
 
-  savePrediction(newPredictions: BirdPrediction[], audioFile: Blob): Observable<any> {
+  savePrediction(newPredictions: BirdPrediction[], predictionId: string): Observable<any> {
     const formData: FormData = new FormData();
-    formData.append('file',audioFile,"sample.wav");
     formData.append('predictionData', JSON.stringify(newPredictions));
+    formData.append("predictionId", predictionId)
 
     return this._httpClient.post(this.baseUrl + "save", formData);
   }

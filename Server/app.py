@@ -88,22 +88,16 @@ def init_db() -> sqlalchemy.engine.base.Engine:
 @app.route("/save",methods=['post'])
 def save_prediction():
     predictions = request.form.get('predictionData')
-    fileToSave = request.files['file']
-    # with tempfile.NamedTemporaryFile(mode='wb', suffix='.wav', delete=True) as temp_file:
-    #     temp_file.write(fileToSave)
-    # audio_blob = open(temp_file.name, 'rb').read()
-    psy_binary_data = psycopg2.Binary(fileToSave.read())
+    predictionId = request.form.get('predictionId')
     strPredictions = str(predictions)
-    sql = sqlalchemy.text(""" INSERT INTO analysis ("audioData","predictionData") VALUES (:audiodata,:predictionData) RETURNING id """)
+    sql = sqlalchemy.text(""" UPDATE analysis SET "predictionData" = :predictionData WHERE id = :id """)
     try:
         with db.connect() as conn:
-            params = {"audiodata": psy_binary_data,"predictionData": strPredictions}
-            results = conn.execute(sql, params)
-            temp = results.fetchone()
-
+            params = {"predictionData": strPredictions, "id": predictionId}
+            conn.execute(sql, params)
             conn.commit()
             data = {
-                "data" : temp[0],
+                "data" : predictionId,
                 "status": "sucess"
             }
             return jsonify(data)
@@ -133,10 +127,9 @@ def health_check():
 def analyze_bird():
     print("Analyzing...", flush=True)
     audioFile = request.files['file']
-    temp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+    temp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=True)
     with open(temp_file.name, 'wb') as f:
         audioFile.save(f)
-        f.close()
     latitude = request.form.get('lat')
     longitude = request.form.get('long')
     day = request.form.get('day')
@@ -152,6 +145,7 @@ def analyze_bird():
         min_conf=0.25,
     )
     recording.analyze()
+    output = None
     if (len(recording.detections) == 0):
         print("rerunning analysis with no lat/long", flush=True)
         newRecording = Recording(
@@ -162,14 +156,30 @@ def analyze_bird():
         )
         newRecording.analyze()
         print("Creating output...", flush=True)
-        temp_file.close()
-        os.remove(temp_file.name)
-        return jsonify(newRecording.detections)
+        output = newRecording.detections
     else:
         print("Creating output...", flush=True)
-        temp_file.close()
-        os.remove(temp_file.name)
-        return jsonify(recording.detections)
+        output = recording.detections
+    psy_binary_data = psycopg2.Binary(temp_file.read())
+    sql = sqlalchemy.text(""" INSERT INTO analysis ("audioData") VALUES (:audiodata) RETURNING id """)
+    try:
+        with db.connect() as conn:
+            params = {"audiodata": psy_binary_data}
+            results = conn.execute(sql, params)
+            temp = results.fetchone()
+            conn.commit()
+            data = {
+                "predictions": output,
+                "id": temp[0]
+            }
+            return jsonify(data)
+    except Exception as error:
+        print(f"An error occurred: {error}", flush=True)
+        data = {
+            "error" : str(error),
+            "staus": "failed"
+        }
+        return jsonify(data)
 
 @app.route("/analysis-list",methods=['get'])
 def get_all_anaylsis():

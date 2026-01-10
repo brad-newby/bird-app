@@ -25,6 +25,7 @@ export class RecordComponent implements OnInit {
   year: string = ""
   analyzing = false;
   tempAudioURL: string = "";
+  predictionId: string = "";
 
   constructor(private _birdService: BirdServiceService, private _domSanitizer: DomSanitizer) {}
   
@@ -73,7 +74,8 @@ export class RecordComponent implements OnInit {
     }
     this._birdService.analyzeBird(blob, this.lat, this.long, this.day, this.month, this.year).subscribe({next: (result) => {
       console.log(result);
-      this.birdPredictions = result;
+      this.birdPredictions = result['predictions'];
+      this.predictionId = result['id'];
       this.birdPredictions = Array.from(new Set(this.birdPredictions.map(a => a!.scientific_name)))
       .map(id => {
         return this.birdPredictions.find(a => a!.scientific_name === id)
@@ -107,7 +109,7 @@ export class RecordComponent implements OnInit {
             console.log(err);
             this.analyzing = false;
           }}).add(() => {
-            this._birdService.savePrediction(this.birdPredictions as BirdPrediction[],blob).subscribe({next: (result) => {
+            this._birdService.savePrediction(this.birdPredictions as BirdPrediction[],this.predictionId).subscribe({next: (result) => {
               console.log("Saved results")
               console.log(result);
               this.getBirdAudio(result["data"]);
