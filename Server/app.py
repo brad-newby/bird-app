@@ -75,6 +75,7 @@ def check_db_version():
 def convert_to_binary_data(filename):
     with open(filename, 'rb') as file:
         blob_data = file.read()
+        file.close()
     return blob_data
 
 @app.before_request
@@ -91,7 +92,10 @@ def save_prediction():
     temp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
     with open(temp_file.name, 'wb') as f:
         audioFile.save(f)
+        f.close()
     audio_blob = convert_to_binary_data(temp_file.name)
+    temp_file.close()
+    os.remove(temp_file.name)
     psy_binary_data = psycopg2.Binary(audio_blob)
     strPredictions = str(predictions)
     sql = sqlalchemy.text(""" INSERT INTO analysis ("audioData","predictionData") VALUES (:audiodata,:predictionData) RETURNING id """)
@@ -136,6 +140,7 @@ def analyze_bird():
     temp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
     with open(temp_file.name, 'wb') as f:
         audioFile.save(f)
+        f.close()
     latitude = request.form.get('lat')
     longitude = request.form.get('long')
     day = request.form.get('day')
@@ -161,9 +166,13 @@ def analyze_bird():
         )
         newRecording.analyze()
         print("Creating output...", flush=True)
+        temp_file.close()
+        os.remove(temp_file.name)
         return jsonify(newRecording.detections)
     else:
         print("Creating output...", flush=True)
+        temp_file.close()
+        os.remove(temp_file.name)
         return jsonify(recording.detections)
 
 @app.route("/analysis-list",methods=['get'])
