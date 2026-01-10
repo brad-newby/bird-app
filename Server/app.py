@@ -14,6 +14,7 @@ import psycopg2
 app = Flask(__name__)
 CORS(app)
 analyzer = Analyzer()
+db = None
 
 def connect_unix_socket() -> sqlalchemy.engine.base.Engine:
     db_user = "postgres"
@@ -38,7 +39,6 @@ def connect_unix_socket() -> sqlalchemy.engine.base.Engine:
     )
     return pool
 
-
 def connect_tcp_socket() -> sqlalchemy.engine.base.Engine:
     db_host = "34.28.125.208"
     db_user = "postgres"
@@ -59,15 +59,6 @@ def connect_tcp_socket() -> sqlalchemy.engine.base.Engine:
     )
     return pool
 
-db = None
-
-@app.before_request
-def init_db() -> sqlalchemy.engine.base.Engine:
-    global db
-    if db is None:
-        db = connect_unix_socket()
-        #db = connect_tcp_socket()
-
 def check_db_version():
     query = sqlalchemy.text(
         "SELECT version()"
@@ -86,6 +77,13 @@ def convert_to_binary_data(filename):
         blob_data = file.read()
     return blob_data
 
+@app.before_request
+def init_db() -> sqlalchemy.engine.base.Engine:
+    global db
+    if db is None:
+        #db = connect_unix_socket()
+        db = connect_tcp_socket()
+
 @app.route("/save",methods=['post'])
 def save_prediction():
     predictions = request.form.get('predictionData')
@@ -96,14 +94,16 @@ def save_prediction():
     audio_blob = convert_to_binary_data(temp_file.name)
     psy_binary_data = psycopg2.Binary(audio_blob)
     strPredictions = str(predictions)
-    sql = sqlalchemy.text(""" INSERT INTO analysis ("audioData","predictionData") VALUES (:audiodata,:predictionData) """)
+    sql = sqlalchemy.text(""" INSERT INTO analysis ("audioData","predictionData") VALUES (:audiodata,:predictionData) RETURNING id """)
     try:
         with db.connect() as conn:
             params = {"audiodata": psy_binary_data,"predictionData": strPredictions}
-            conn.execute(sql, params)
+            results = conn.execute(sql, params)
+            temp = results.fetchone()
+
             conn.commit()
             data = {
-                "data" : predictions,
+                "data" : temp[0],
                 "status": "sucess"
             }
             return jsonify(data)

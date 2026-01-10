@@ -40,6 +40,15 @@
           </mat-card-content>
         </mat-card>
       </div>
+      <div *ngIf="tempAudioURL">
+        <mat-card appearance="outlined" style="margin: 10px;">
+          <mat-card-content>
+            <audio controls="">
+              <source [src]="sanitize(tempAudioURL)" type="audio/wav">
+            </audio>
+          </mat-card-content>
+        </mat-card>
+      </div>
       <div *ngIf="analyzing">
         <mat-card appearance="outlined" style="margin: 10px; justify-content: center; align-items: center;">
           <mat-card-content>
